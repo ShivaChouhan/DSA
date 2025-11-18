@@ -1,0 +1,1 @@
+Give me these lecture complete notes with detailed explanation, which contain complete code of all brute force, average and optimal case code in java, make sure you provide the brute force, average and optimal case code of each question not only the explaination, also provide question sample before every solution, give me complete response in .md code
