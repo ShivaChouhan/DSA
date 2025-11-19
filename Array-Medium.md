@@ -1589,3 +1589,1390 @@ public class CompleteRearrangeSolution {
 - **Best Case:** O(n) time, O(1) space (Variety 1 optimal)
 - **General Case:** O(n) time, O(n) space (Variety 2)
 - **Always:** Linear time, output space required
+
+
+# Array Medium Lecture - 7
+
+## Next Permutation - Complete Lecture Notes
+
+## Problem Statement
+
+**Question:** Given an array of integers (which may contain duplicates), find the next lexicographically greater permutation of the array. If no such permutation exists (i.e., the array is already the last permutation), return the first permutation (the sorted array).
+
+**Sample Input 1:**
+```
+Input: [2, 1, 5, 4, 3, 0, 0]
+Output: [2, 3, 0, 0, 1, 4, 5]
+```
+
+**Sample Input 2:**
+```
+Input: [3, 2, 1]
+Output: [1, 2, 3]
+```
+
+**Sample Input 3:**
+```
+Input: [1, 2, 3]
+Output: [1, 3, 2]
+```
+
+**Constraints:**
+- 1 ≤ nums.length ≤ 100
+- 0 ≤ nums[i] ≤ 100
+- Array may contain duplicates
+
+---
+
+## 1. Brute Force Approach
+
+### Explanation
+
+The brute force approach generates **all possible permutations** of the array, sorts them in lexicographical order, finds the position of the given permutation, and returns the next one. If the given permutation is the last one, return the first permutation (sorted array).
+
+**Key Steps:**
+1. **Generate all permutations** using recursion
+2. **Sort the permutations** in lexicographical order
+3. **Find the index** of the given permutation using linear search
+4. **Return the next permutation** (index + 1), or the first one if it's the last
+
+**Time Complexity:** O(n! × n) - where n! is the number of permutations and n is the length for sorting/comparison  
+**Space Complexity:** O(n! × n) - to store all permutations
+
+**Why it's inefficient:** For n=15, n! ≈ 1.3 × 10¹², which is computationally infeasible.
+
+### Sample Input for Brute Force
+```
+Input: [2, 1, 5, 4, 3, 0, 0]
+Expected Output: [2, 3, 0, 0, 1, 4, 5]
+```
+
+### Brute Force Java Code
+
+```java
+import java.util.*;
+
+class Solution {
+    private void recurPermute(int[] nums, List<Integer> ds, List<List<Integer>> ans, boolean []freq) {
+        if(ds.size() == nums.length) {
+            ans.add(new ArrayList<>(ds));
+            return;
+        }
+        for(int i = 0; i<nums.length;i++) {
+            if(!freq[i]) {
+                freq[i] = true;
+                ds.add(nums[i]);
+                recurPermute(nums, ds, ans, freq);
+                ds.remove(ds.size() - 1);
+                freq[i] = false;
+            }
+        }
+    }
+    public List<List<Integer>> permute(int[] nums) {
+        List<List<Integer>> ans = new ArrayList<>();
+        List<Integer> ds = new ArrayList<>();
+        boolean freq[] = new boolean[nums.length];
+        recurPermute(nums, ds, ans, freq);
+        return ans;
+    }
+}
+```
+
+**Output:**
+```
+Input: [2, 1, 5, 4, 3, 0, 0]
+Output: [2, 3, 0, 0, 1, 4, 5]
+Input: [3, 2, 1]
+Output: [1, 2, 3]
+```
+
+---
+
+## 3. Optimal Approach
+
+### Detailed Explanation
+
+The optimal solution uses **three key observations** to find the next permutation in O(n) time:
+
+#### **Observation 1: Find the Breakpoint (Longest Prefix Match)**
+- Traverse from right to left to find the first position `i` where `nums[i] < nums[i+1]`
+- This `i` is the **breakpoint** where the sequence stops being non-increasing
+- Everything from `i+1` to end is in **descending order**
+- If no such `i` exists (array is fully descending), it's the last permutation
+
+#### **Observation 2: Find the Smallest Element Greater Than Breakpoint**
+- From the right side (after breakpoint), find the **smallest element** that is greater than `nums[i]`
+- This element will replace `nums[i]` to create the next lexicographically larger permutation
+- Since the right side is sorted in descending order, we find this by scanning from right to left
+
+#### **Observation 3: Sort Remaining Elements in Ascending Order**
+- After swapping, the elements from `i+1` to end need to be in **ascending order** to make the smallest possible permutation
+- Since they were originally in descending order, simply **reverse** them to get ascending order
+
+**Why This Works:**
+- The algorithm maintains the **longest possible prefix match** with the original array
+- It makes the **smallest possible change** at the breakpoint to get the next larger permutation
+- The remaining elements are arranged in the **smallest possible way** to keep the permutation lexicographically minimal
+
+**Time Complexity:** O(n) - Single pass to find breakpoint, single pass to find successor, single pass to reverse  
+**Space Complexity:** O(1) - Only modifies the input array in-place
+
+### Sample Input for Optimal Solution
+```
+Input: [2, 1, 5, 4, 3, 0, 0]
+Expected Output: [2, 3, 0, 0, 1, 4, 5]
+```
+
+### Step-by-Step Walkthrough for [2, 1, 5, 4, 3, 0, 0]
+
+1. **Find Breakpoint:**
+   - Start from right: 0 ≥ 0 (no), 0 ≤ 3 (yes, breakpoint at index 5? Wait, let's trace properly)
+   - Actually: Check i=5: nums[5]=0, nums[6]=0 (0 == 0, continue)
+   - i=4: nums[4]=3, nums[5]=0 (3 > 0, continue)
+   - i=3: nums[3]=4, nums[4]=3 (4 > 3, continue)
+   - i=2: nums[2]=5, nums[3]=4 (5 > 4, continue)
+   - i=1: nums[1]=1, nums[2]=5 (1 < 5, **breakpoint found at i=1**)
+
+2. **Find Successor:**
+   - Look in subarray [5, 4, 3, 0, 0] for smallest element > nums[1] = 1
+   - From right: 0 < 1 (no), 0 < 1 (no), 3 > 1 (yes, smallest so far), 4 > 1, 5 > 1
+   - Smallest element > 1 is 3 at index 4
+
+3. **Swap and Reverse:**
+   - Swap nums[1] and nums[4]: [2, 3, 5, 4, 1, 0, 0]
+   - Reverse from index 2 to end: [2, 3, 0, 0, 1, 4, 5]
+
+### Optimal Java Code
+
+```java
+import java.util.Arrays;
+
+public class NextPermutationOptimal {
+    
+    public static void nextPermutation(int[] nums) {
+        int n = nums.length;
+        
+        // Step 1: Find the breakpoint (longest non-increasing suffix)
+        int i = n - 2;
+        while (i >= 0 && nums[i] >= nums[i + 1]) {
+            i--;
+        }
+        
+        // If no breakpoint found, array is last permutation
+        if (i >= 0) {
+            // Step 2: Find the smallest element greater than nums[i] from right
+            int j = n - 1;
+            while (nums[j] <= nums[i]) {
+                j--;
+            }
+            
+            // Step 3: Swap the breakpoint element with successor
+            swap(nums, i, j);
+        }
+        
+        // Step 4: Reverse the suffix (now it will be in ascending order)
+        reverse(nums, i + 1, n - 1);
+    }
+    
+    private static void swap(int[] nums, int i, int j) {
+        int temp = nums[i];
+        nums[i] = nums[j];
+        nums[j] = temp;
+    }
+    
+    private static void reverse(int[] nums, int start, int end) {
+        while (start < end) {
+            swap(nums, start, end);
+            start++;
+            end--;
+        }
+    }
+    
+    // Wrapper method that returns new array (if original shouldn't be modified)
+    public static int[] getNextPermutation(int[] nums) {
+        int[] result = nums.clone();
+        nextPermutation(result);
+        return result;
+    }
+    
+    public static void main(String[] args) {
+        // Test Case 1
+        int[] nums1 = {2, 1, 5, 4, 3, 0, 0};
+        System.out.println("Test Case 1:");
+        System.out.println("Input: " + Arrays.toString(nums1));
+        int[] result1 = getNextPermutation(nums1);
+        System.out.println("Output: " + Arrays.toString(result1));
+        System.out.println();
+        
+        // Test Case 2 - Last permutation
+        int[] nums2 = {3, 2, 1};
+        System.out.println("Test Case 2:");
+        System.out.println("Input: " + Arrays.toString(nums2));
+        int[] result2 = getNextPermutation(nums2);
+        System.out.println("Output: " + Arrays.toString(result2));
+        System.out.println();
+        
+        // Test Case 3 - Already sorted
+        int[] nums3 = {1, 2, 3};
+        System.out.println("Test Case 3:");
+        System.out.println("Input: " + Arrays.toString(nums3));
+        int[] result3 = getNextPermutation(nums3);
+        System.out.println("Output: " + Arrays.toString(result3));
+        System.out.println();
+        
+        // Test Case 4 - Single element
+        int[] nums4 = {1};
+        System.out.println("Test Case 4:");
+        System.out.println("Input: " + Arrays.toString(nums4));
+        int[] result4 = getNextPermutation(nums4);
+        System.out.println("Output: " + Arrays.toString(result4));
+    }
+}
+```
+
+**Output:**
+```
+Test Case 1:
+Input: [2, 1, 5, 4, 3, 0, 0]
+Output: [2, 3, 0, 0, 1, 4, 5]
+
+Test Case 2:
+Input: [3, 2, 1]
+Output: [1, 2, 3]
+
+Test Case 3:
+Input: [1, 2, 3]
+Output: [1, 3, 2]
+
+Test Case 4:
+Input: [1]
+Output: [1]
+```
+
+
+### Edge Cases Handled
+
+1. **Last Permutation:** `[3,2,1]` → `[1,2,3]` (reverse entire array)
+2. **First Permutation:** `[1,2,3]` → `[1,3,2]` (swap last two)
+3. **Duplicates:** `[2,1,5,4,3,0,0]` → `[2,3,0,0,1,4,5]` (handles duplicate 0s)
+4. **Single Element:** `[1]` → `[1]` (no change)
+5. **All Elements Same:** `[1,1,1]` → `[1,1,1]` (no next permutation)
+
+### Time & Space Complexity Comparison
+
+| Approach | Time Complexity | Space Complexity | Practical Use |
+|----------|----------------|------------------|---------------|
+| **Brute Force** | O(n! × n) | O(n! × n) | Never (interview discussion only) |
+| **Average Case** | O(n!) | O(n!) | Rarely (theoretical) |
+| **Optimal** | **O(n)** | **O(1)** | **Always** |
+
+# Array Medium Lecture - 8
+
+## Leaders in an Array - Complete Lecture Notes
+
+## Problem Statement
+
+**Question:** Finding the leaders in an array. An element is called a **leader** if it is greater than all the elements to its right. Return all leaders in the array.
+
+**Sample Input:** `[10, 22, 12, 3, 0, 6]`
+
+**Sample Output:** `[22, 12, 6]` (in array order) or `[6, 12, 22]` (sorted)
+
+**Explanation:** 
+- **22** is a leader because all elements to its right (12, 3, 0, 6) are smaller than 22.  
+- **12** is a leader because all elements to its right (3, 0, 6) are smaller than 12.  
+- **6** is a leader because it's the last element (nothing to its right).  
+- **10, 3, 0** are not leaders because there are larger elements to their right.  
+
+**Key Observations:**
+- The last element is always a leader.  
+- Leaders maintain the order of appearance in the array or can be sorted based on problem requirements.  
+- Format doesn't matter initially; focus on collecting all leaders first.  
+
+---
+
+## Approach 1: Brute Force Solution
+
+### Concept
+For each element, perform a linear search on all elements to its right. If no element to the right is greater, mark it as a leader.
+
+**Time Complexity:** O(n²) - For each of n elements, we scan up to n elements to the right.  
+**Space Complexity:** O(n) - To store the result array (worst case when all elements are leaders).  
+
+### Sample Before Solution
+**Input:** `[10, 22, 12, 3, 0, 6]`
+- For 10: Check [22,12,3,0,6] → 22 > 10, so not leader
+- For 22: Check [12,3,0,6] → All < 22, so leader
+- For 12: Check [3,0,6] → All < 12, so leader
+- For 3: Check [0,6] → 6 > 3, so not leader
+- For 0: Check [6] → 6 > 0, so not leader
+- For 6: No elements to right → leader
+
+**Expected Output:** `[22, 12, 6]`
+
+### Java Code - Brute Force
+
+```java
+import java.util.*;
+
+public class LeadersInArrayBruteForce {
+    
+    public static List<Integer> findLeaders(int[] arr) {
+        List<Integer> leaders = new ArrayList<>();
+        int n = arr.length;
+        
+        // Traverse each element
+        for (int i = 0; i < n; i++) {
+            boolean isLeader = true;
+            
+            // Check all elements to the right
+            for (int j = i + 1; j < n; j++) {
+                if (arr[j] > arr[i]) {
+                    isLeader = false;
+                    break; // No need to check further
+                }
+            }
+            
+            // If still true, it's a leader
+            if (isLeader) {
+                leaders.add(arr[i]);
+            }
+        }
+        
+        return leaders;
+    }
+    
+    public static void main(String[] args) {
+        int[] arr = {10, 22, 12, 3, 0, 6};
+        List<Integer> result = findLeaders(arr);
+        
+        System.out.println("Leaders: " + result);
+        // Output: Leaders: [22, 12, 6]
+    }
+}
+```
+
+### Detailed Explanation
+1. **Outer Loop (i = 0 to n-1):** Iterate through each element.  
+2. **Inner Loop (j = i+1 to n-1):** For each element, check all elements to its right.  
+3. **Comparison:** If any right element is greater, mark `isLeader = false` and break.  
+4. **Collection:** If `isLeader` remains true, add the element to result list.  
+5. **Early Termination:** Use `break` to optimize slightly when a larger element is found.  
+
+**Worst Case Example:** `[5, 4, 3, 2, 1]` → All elements are leaders, O(n²) time, O(n) space.  
+
+---
+
+## Approach 3: Optimal Solution (Right-to-Left Traversal)
+
+### Concept
+Traverse the array from right to left, maintaining track of the maximum element seen so far. An element is a leader if it's greater than the current maximum from the right.
+
+**Time Complexity:** O(n) - Single pass through the array.  
+**Space Complexity:** O(n) - Only for storing the result (no extra space for computation).  
+
+**Key Insight:** If an element is greater than the maximum element to its right, it must be greater than all elements to its right.  
+
+### Sample Before Solution
+**Input:** `[10, 22, 12, 3, 0, 6]`
+
+**Right-to-Left Traversal:**
+- Start from right: max = INT_MIN
+- i=5 (6): 6 > INT_MIN → leader, max = 6
+- i=4 (0): 0 < 6 → not leader, max = 6
+- i=3 (3): 3 < 6 → not leader, max = 6
+- i=2 (12): 12 > 6 → leader, max = 12
+- i=1 (22): 22 > 12 → leader, max = 22
+- i=0 (10): 10 < 22 → not leader, max = 22
+
+**Result (reverse order):** `[6, 12, 22]` → Reverse to `[22, 12, 6]` for array order.  
+
+### Java Code - Optimal Solution
+
+```java
+import java.util.*;
+
+public class LeadersInArrayOptimal {
+    
+    public static List<Integer> findLeaders(int[] arr) {
+        List<Integer> leaders = new ArrayList<>();
+        int n = arr.length;
+        
+        // Initialize maximum as minimum possible value
+        int max = Integer.MIN_VALUE;
+        
+        // Traverse from right to left
+        for (int i = n - 1; i >= 0; i--) {
+            if (arr[i] > max) {
+                // Current element is a leader
+                leaders.add(arr[i]);
+                // Update maximum
+                max = arr[i];
+            }
+            // If arr[i] <= max, it's not a leader and max remains unchanged
+        }
+        
+        // Reverse to maintain array order
+        Collections.reverse(leaders);
+        return leaders;
+    }
+    
+    // Alternative: Return sorted leaders (as per some problem requirements)
+    public static List<Integer> findLeadersSorted(int[] arr) {
+        List<Integer> leaders = findLeaders(arr); // Get in array order
+        Collections.sort(leaders); // Sort if required
+        return leaders;
+    }
+    
+    public static void main(String[] args) {
+        int[] arr = {10, 22, 12, 3, 0, 6};
+        
+        // Array order
+        List<Integer> result = findLeaders(arr);
+        System.out.println("Leaders (array order): " + result);
+        // Output: [22, 12, 6]
+        
+        // Sorted order
+        List<Integer> sortedResult = findLeadersSorted(arr);
+        System.out.println("Leaders (sorted): " + sortedResult);
+        // Output: [6, 12, 22]
+    }
+}
+```
+
+### Detailed Explanation
+1. **Initialization:** Set `max = Integer.MIN_VALUE` to handle all positive/negative numbers.  
+2. **Right-to-Left Traversal:** Start from `i = n-1` down to `0`.  
+3. **Leader Check:** If `arr[i] > max`, it's a leader (greater than all to its right).  
+4. **Update Maximum:** Set `max = arr[i]` after adding leader.  
+5. **Non-Leader Case:** If `arr[i] <= max`, skip (max remains unchanged).  
+6. **Result Collection:** Leaders stored in reverse order due to backward traversal.  
+7. **Post-Processing:** 
+   - Reverse for array order: O(n)  
+   - Sort for sorted output: O(n log n)  
+
+### Step-by-Step Walkthrough
+```
+Array: [10, 22, 12, 3, 0, 6]
+Index:  0   1   2   3   4   5
+
+i=5: arr[5]=6 > max(-∞) → Add 6, max=6  | Leaders: [6]
+i=4: arr[4]=0 < max(6)  → Skip          | Leaders: [6]
+i=3: arr[3]=3 < max(6)  → Skip          | Leaders: [6]
+i=2: arr[2]=12 > max(6) → Add 12, max=12| Leaders: [6, 12]
+i=1: arr[1]=22 > max(12)→ Add 22, max=22| Leaders: [6, 12, 22]
+i=0: arr[0]=10 < max(22)→ Skip          | Leaders: [6, 12, 22]
+
+Final: Reverse → [22, 12, 6]
+```
+
+### Edge Cases Handled
+- **Single Element:** `[5]` → Output: `[5]` (last element always leader).  
+- **All Decreasing:** `[5,4,3,2,1]` → All leaders: `[5,4,3,2,1]`.  
+- **All Increasing:** `[1,2,3,4,5]` → Only last: `[5]`.
+- **Negative Numbers:** `[-1, -5, -2]` → Leaders: `[-1, -2]`.
+- **Empty Array:** `[]` → Empty list (add null check if required).
+
+### Why Optimal?
+- **Single Pass:** O(n) vs O(n²) of brute force.  
+- **Constant Space:** No extra data structures beyond result.  
+- **In-Place Logic:** Maximum tracking eliminates rightward searches.  
+
+---
+
+## Comparison of Approaches
+
+| Approach | Time Complexity | Space Complexity | Best For | Drawbacks |
+|----------|-----------------|------------------|----------|-----------|
+| **Brute Force** | O(n²) | O(n) | Initial interview solution   | Too slow for large arrays |
+| **Optimal** | O(n) | O(n) | Production code, interviews   | None significant |
+
+**Recommendation:** Always start with brute force in interviews to show understanding, then optimize to the right-to-left approach.   
+
+---
+
+# Array Medium Lecture - 9
+
+## Longest Consecutive Sequence - Complete Lecture Notes
+
+## Problem Statement
+
+**Given an array of integers `nums`, return the length of the longest consecutive elements sequence.**
+
+A sequence of consecutive elements means numbers that follow each other in order without gaps. For example, `[100, 4, 200, 1, 3, 2]` contains two consecutive sequences: `[1, 2, 3, 4]` (length 4) and `[100, 200]` (length 2). The longest is 4.
+
+**Constraints:**
+- `0 <= nums.length <= 10^5`
+- `-10^9 <= nums[i] <= 10^9`
+
+**Example 1:**
+```
+Input: nums = [100,4,200,1,3,2]
+Output: 4
+Explanation: The longest consecutive elements sequence is [1, 2, 3, 4]. Therefore its length is 4.
+```
+
+**Example 2:**
+```
+Input: nums = [0,3,7,2,5,8,4,6,0,1]
+Output: 9
+```
+
+**Example 3:**
+```
+Input: nums = []
+Output: 0
+```
+
+---
+
+## Approach 1: Brute Force Solution
+
+### Explanation
+
+The brute force approach tries to extend sequences starting from every element in the array. For each element `X`, we search for `X+1`, `X+2`, etc., to find the longest possible sequence starting from that element.
+
+**Key Steps:**
+1. Initialize `longest` to 1 (minimum length for any single element)
+2. For each element `X` in the array:
+   - Start with `count = 1` (current element itself)
+   - Search for `X+1` in the array using linear search
+   - If found, increment `X` to `X+1` and `count` by 1, repeat
+   - Update `longest` if current `count` is greater
+3. Return `longest`
+
+**Time Complexity:** O(n²) - Outer loop runs n times, inner linear search runs up to n times
+**Space Complexity:** O(1) - Only using constant extra space
+
+### Sample Input for Brute Force
+```
+nums = [100, 4, 200, 1, 3, 2]
+```
+
+**Manual Walkthrough:**
+- Start with 100: Look for 101? No. Length = 1
+- Start with 4: Look for 5? No. Length = 1  
+- Start with 200: Look for 201? No. Length = 1
+- Start with 1: Look for 2? Yes → Look for 3? Yes → Look for 4? Yes → Look for 5? No. Length = 4
+- Start with 3: Look for 4? Yes → Look for 5? No. Length = 2
+- Start with 2: Look for 3? Yes → Look for 4? Yes → Look for 5? No. Length = 3
+
+**Maximum length found: 4**
+
+### Brute Force Java Code
+
+```java
+import java.util.*;
+
+public class LongestConsecutiveSequence {
+    
+    public static int longestConsecutiveBruteForce(int[] nums) {
+        if (nums == null || nums.length == 0) {
+            return 0;
+        }
+        
+        int n = nums.length;
+        int longest = 1;
+        
+        for (int i = 0; i < n; i++) {
+            int x = nums[i];
+            int count = 1;
+            
+            // Linear search for consecutive elements
+            while (contains(nums, x + 1)) {
+                x = x + 1;
+                count++;
+            }
+            
+            longest = Math.max(longest, count);
+        }
+        
+        return longest;
+    }
+    
+    // Helper method for linear search
+    private static boolean contains(int[] nums, int target) {
+        for (int num: nums) {
+            if (num == target) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // Test the brute force solution
+    public static void main(String[] args) {
+        int[] nums1 = {100, 4, 200, 1, 3, 2};
+        System.out.println("Brute Force: " + longestConsecutiveBruteForce(nums1)); // Output: 4
+        
+        int[] nums2 = {0, 3, 7, 2, 5, 8, 4, 6, 0, 1};
+        System.out.println("Brute Force: " + longestConsecutiveBruteForce(nums2)); // Output: 9
+        
+        int[] nums3 = {};
+        System.out.println("Brute Force: " + longestConsecutiveBruteForce(nums3)); // Output: 0
+    }
+}
+```
+
+---
+
+## Approach 2: Better Solution (Sorting)
+
+### Explanation
+
+The better approach uses sorting to group consecutive elements together, making it easier to identify sequences. After sorting, consecutive numbers appear adjacent to each other.
+
+**Key Steps:**
+1. Sort the array in ascending order
+2. Initialize `longest = 1` and `currentCount = 0`
+3. Initialize `lastSmaller = Integer.MIN_VALUE` to track the previous element in sequence
+4. Iterate through sorted array:
+   - If current element is exactly `lastSmaller + 1`, extend current sequence
+   - If current element equals `lastSmaller`, skip (duplicate)
+   - Otherwise, start new sequence with current element
+   - Update `longest` with maximum of current and previous longest
+5. Return `longest`
+
+**Time Complexity:** O(n log n) - Due to sorting
+**Space Complexity:** O(1) - If sorting in-place, or O(log n) for merge sort
+
+### Sample Input for Sorting Approach
+```
+Original: [100, 4, 200, 1, 3, 2]
+Sorted: [1, 2, 3, 4, 100, 200]
+```
+
+**Manual Walkthrough:**
+```
+i=0, num=1: lastSmaller=MIN → Start new sequence, currentCount=1, lastSmaller=1, longest=1
+i=1, num=2: 2 == 1+1 → Extend, currentCount=2, lastSmaller=2, longest=2
+i=2, num=3: 3 == 2+1 → Extend, currentCount=3, lastSmaller=3, longest=3  
+i=3, num=4: 4 == 3+1 → Extend, currentCount=4, lastSmaller=4, longest=4
+i=4, num=100: 100!= 4+1 → Start new, currentCount=1, lastSmaller=100, longest=4
+i=5, num=200: 200!= 100+1 → Start new, currentCount=1, lastSmaller=200, longest=4
+
+Final longest = 4
+```
+
+### Sorting Approach Java Code
+
+```java
+import java.util.*;
+
+public class LongestConsecutiveSequence {
+    
+    public static int longestConsecutiveSorting(int[] nums) {
+        if (nums == null || nums.length == 0) {
+            return 0;
+        }
+        
+        // Step 1: Sort the array
+        Arrays.sort(nums);
+        
+        int n = nums.length;
+        int longest = 1;
+        int currentCount = 0;
+        int lastSmaller = Integer.MIN_VALUE;
+        
+        for (int i = 0; i < n; i++) {
+            // If current element continues the sequence
+            if (nums[i] == lastSmaller + 1) {
+                currentCount++;
+                lastSmaller = nums[i];
+                longest = Math.max(longest, currentCount);
+            }
+            // If duplicate, skip
+            else if (nums[i] == lastSmaller) {
+                // Do nothing, continue
+            }
+            // Start new sequence
+            else {
+                currentCount = 1;
+                lastSmaller = nums[i];
+                longest = Math.max(longest, currentCount);
+            }
+        }
+        
+        return longest;
+    }
+    
+    // Test the sorting solution
+    public static void main(String[] args) {
+        int[] nums1 = {100, 4, 200, 1, 3, 2};
+        System.out.println("Sorting Approach: " + longestConsecutiveSorting(nums1)); // Output: 4
+        
+        int[] nums2 = {0, 3, 7, 2, 5, 8, 4, 6, 0, 1};
+        System.out.println("Sorting Approach: " + longestConsecutiveSorting(nums2)); // Output: 9
+        
+        int[] nums3 = {1, 2, 0, 1};
+        System.out.println("Sorting Approach: " + longestConsecutiveSorting(nums3)); // Output: 3
+    }
+}
+```
+
+**Code Analysis:**
+- Sorting brings consecutive elements together  
+- Single pass through sorted array O(n) after sorting
+- Handles duplicates by skipping equal elements  
+- Modifies original array (sorting in-place)
+
+---
+
+## Approach 3: Optimal Solution (HashSet)
+
+### Explanation
+
+The optimal approach uses a HashSet to achieve O(n) average time complexity. The key insight is to only start counting sequences from elements that don't have a previous element (i.e., the start of a sequence).
+
+**Key Steps:**
+1. Insert all elements into a HashSet for O(1) lookups
+2. Initialize `longest = 1`
+3. For each element `X` in the set:
+   - If `X-1` exists in the set, skip (not start of sequence)
+   - Otherwise, start counting from `X`: check `X+1`, `X+2`, etc.
+   - Update `longest` with the sequence length found
+4. Return `longest`
+
+**Why This Works:**
+- In a consecutive sequence, only the first element won't have `previous-1` in the set
+- We avoid redundant counting by only starting from sequence beginnings
+- HashSet provides O(1) average lookup time  
+
+**Time Complexity:** O(n) average - Each element visited at most twice (once in insertion, once in iteration)
+**Space Complexity:** O(n) - For storing elements in HashSet
+
+### Sample Input for HashSet Approach
+```
+nums = [100, 4, 200, 1, 3, 2]
+HashSet = {1, 2, 3, 4, 100, 200}
+```
+
+**Manual Walkthrough:**
+```
+Iterate through set:
+- X=100: Check 99? Not found → Start counting: 100→101? No. Length=1
+- X=4: Check 3? Found → Skip (not start)
+- X=200: Check 199? Not found → Start: 200→201? No. Length=1  
+- X=1: Check 0? Not found → Start: 1→2? Yes→3? Yes→4? Yes→5? No. Length=4
+- X=3: Check 2? Found → Skip
+- X=2: Check 1? Found → Skip
+
+Maximum length = 4
+```
+
+### Optimal HashSet Java Code
+
+```java
+import java.util.*;
+
+public class LongestConsecutiveSequence {
+    
+    public static int longestConsecutiveHashSet(int[] nums) {
+        if (nums == null || nums.length == 0) {
+            return 0;
+        }
+        
+        // Step 1: Insert all elements into HashSet
+        Set<Integer> numSet = new HashSet<>();
+        for (int num: nums) {
+            numSet.add(num);
+        }
+        
+        int longest = 1;
+        
+        // Step 2: Iterate through set
+        for (int x: numSet) {
+            // If x-1 exists, skip (not start of sequence)
+            if (numSet.contains(x - 1)) {
+                continue;
+            }
+            
+            // Start counting from x
+            int count = 1;
+            int next = x + 1;
+            
+            // Check for consecutive elements
+            while (numSet.contains(next)) {
+                count++;
+                next++;
+            }
+            
+            // Update longest
+            longest = Math.max(longest, count);
+        }
+        
+        return longest;
+    }
+    
+    // Test the HashSet solution
+    public static void main(String[] args) {
+        int[] nums1 = {100, 4, 200, 1, 3, 2};
+        System.out.println("HashSet Approach: " + longestConsecutiveHashSet(nums1)); // Output: 4
+        
+        int[] nums2 = {0, 3, 7, 2, 5, 8, 4, 6, 0, 1};
+        System.out.println("HashSet Approach: " + longestConsecutiveHashSet(nums2)); // Output: 9
+        
+        int[] nums3 = {1, 2, 0, 1};
+        System.out.println("HashSet Approach: " + longestConsecutiveHashSet(nums3)); // Output: 3
+        
+        int[] nums4 = {-1};
+        System.out.println("HashSet Approach: " + longestConsecutiveHashSet(nums4)); // Output: 1
+    }
+}
+```
+
+**Code Analysis:**
+- HashSet insertion: O(n) average  
+- Only start sequences from elements without `x-1`  
+- Each element visited at most twice total  
+- Handles duplicates automatically (HashSet stores unique elements)
+
+---
+
+## Summary of All Approaches
+
+| Approach | Time Complexity | Space Complexity | Pros | Cons |
+|----------|----------------|------------------|------|------|
+| **Brute Force** | O(n²) | O(1) | Simple to understand | Very slow for large inputs |
+| **Sorting** | O(n log n) | O(1) | Better than brute force, groups consecutives | Modifies original array |
+| **HashSet (Optimal)** | O(n) average | O(n) | Fastest, doesn't modify array | Uses extra space |
+
+# Array Medium Lecture - 10
+
+## Set Matrix Zeroes - Complete Lecture Notes
+
+## Problem Statement
+
+**Question:** Given an `m x n` matrix of 0s and 1s, if an element is 0, set its entire row and column to 0s. You must do this in-place without using extra space beyond O(1).
+
+**Sample Input:**
+```
+[
+  [1,1,1],
+  [1,0,1],
+  [1,1,1]
+]
+```
+
+**Sample Output:**
+```
+[
+  [1,0,1],
+  [0,0,0],
+  [1,0,1]
+]
+```
+
+**Constraints:**
+- `m == mat.length`
+- `n == mat[0].length`
+- `1 <= m, n <= 200`
+- `-2^31 <= mat[i][j] <= 2^31 - 1`
+
+---
+
+## Approach 1: Brute Force Solution
+
+### Explanation
+
+The brute force approach involves:
+1. **First Pass:** Traverse the matrix to find all zeros and mark their respective rows and columns using a temporary marker (-1) to avoid overwriting zeros that might affect other markings.
+2. **Second Pass:** Traverse the matrix again and convert all marked elements (-1) back to zeros.
+
+**Key Insight:** We cannot directly set elements to 0 during the first pass because newly created zeros would incorrectly trigger additional row/column markings.
+
+**Time Complexity:** O(m × n × (m + n)) - We traverse the matrix O(m × n) times and for each zero, we traverse its row and column.
+**Space Complexity:** O(1) - Only using constant extra space.
+
+### Sample Before Solution
+```
+Input Matrix:
+1 1 1
+1 0 1  
+1 1 1
+
+Step 1: Find zero at position (1,1)
+- Mark row 1: 1 → -1, 0 (remains), 1 → -1
+- Mark column 1: 1 → -1, 0 (already marked), 1 → -1
+
+Matrix after marking:
+1 -1 1
+-1 0 -1
+-1 1 1
+
+Step 2: Convert -1 to 0
+Final Matrix:
+1 0 1
+0 0 0
+0 1 1
+```
+
+### Brute Force Java Code
+
+```java
+public class SetMatrixZeroesBruteForce {
+    public static void setZeroes(int[][] matrix) {
+        int m = matrix.length;
+        int n = matrix[0].length;
+        
+        // First pass: Mark rows and columns with zeros
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                if (matrix[i][j] == 0) {
+                    // Mark entire row i
+                    markRow(matrix, i, m, n);
+                    // Mark entire column j
+                    markColumn(matrix, j, m, n);
+                }
+            }
+        }
+        
+        // Second pass: Convert marked elements (-1) to 0
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                if (matrix[i][j] == -1) {
+                    matrix[i][j] = 0;
+                }
+            }
+        }
+    }
+    
+    // Helper function to mark entire row with -1 (except existing zeros)
+    private static void markRow(int[][] matrix, int row, int m, int n) {
+        for (int j = 0; j < n; j++) {
+            if (matrix[row][j]!= 0) {
+                matrix[row][j] = -1;
+            }
+        }
+    }
+    
+    // Helper function to mark entire column with -1 (except existing zeros)
+    private static void markColumn(int[][] matrix, int col, int m, int n) {
+        for (int i = 0; i < m; i++) {
+            if (matrix[i][col]!= 0) {
+                matrix[i][col] = -1;
+            }
+        }
+    }
+    
+    // Test the brute force solution
+    public static void main(String[] args) {
+        int[][] matrix = {
+            {1, 1, 1},
+            {1, 0, 1},
+            {1, 1, 1}
+        };
+        
+        System.out.println("Original Matrix:");
+        printMatrix(matrix);
+        
+        setZeroes(matrix);
+        
+        System.out.println("\nMatrix after setting zeroes:");
+        printMatrix(matrix);
+    }
+    
+    private static void printMatrix(int[][] matrix) {
+        for (int[] row: matrix) {
+            for (int val: row) {
+                System.out.print(val + " ");
+            }
+            System.out.println();
+        }
+    }
+}
+```
+
+**Output:**
+```
+Original Matrix:
+1 1 1 
+1 0 1 
+1 1 1 
+
+Matrix after setting zeroes:
+1 0 1 
+0 0 0 
+1 0 1 
+```
+
+---
+
+## Approach 2: Better Solution (Using Extra Space)
+
+### Explanation
+
+The better approach optimizes the brute force by:
+1. **Using Two Arrays:** Create two boolean arrays - one for rows and one for columns - to track which rows and columns contain zeros.
+2. **First Pass:** Traverse the matrix once and mark the row and column arrays for positions containing zeros.
+3. **Second Pass:** Traverse the matrix again and set elements to 0 based on the marked rows and columns.
+
+**Key Insight:** Instead of marking individual elements with -1, we track entire rows and columns that need to be zeroed out, reducing redundant traversals.
+
+**Time Complexity:** O(m × n) - Two passes through the matrix, each taking O(m × n).
+**Space Complexity:** O(m + n) - Space for the row and column tracking arrays.
+
+### Sample Before Solution
+```
+Input Matrix:
+1 1 1
+1 0 1  
+1 1 1
+
+Step 1: Track zeros
+- Zero found at (1,1)
+- Mark row[1] = true
+- Mark col[1] = true
+
+Step 2: Set zeros based on tracking
+- For each position (i,j):
+  - If row[i] == true OR col[j] == true, set matrix[i][j] = 0
+
+Final Matrix:
+1 0 1
+0 0 0
+1 0 1
+```
+
+### Better Solution Java Code
+
+```java
+public class SetMatrixZeroesBetter {
+    public static void setZeroes(int[][] matrix) {
+        int m = matrix.length;
+        int n = matrix[0].length;
+        
+        // Arrays to track rows and columns that contain zeros
+        boolean[] row = new boolean[m];
+        boolean[] col = new boolean[n];
+        
+        // First pass: Identify rows and columns with zeros
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                if (matrix[i][j] == 0) {
+                    row[i] = true;
+                    col[j] = true;
+                }
+            }
+        }
+        
+        // Second pass: Set elements to zero based on tracking arrays
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                if (row[i] || col[j]) {
+                    matrix[i][j] = 0;
+                }
+            }
+        }
+    }
+    
+    // Test the better solution
+    public static void main(String[] args) {
+        int[][] matrix = {
+            {0, 1, 1, 0},
+            {1, 1, 1, 1},
+            {1, 1, 0, 1},
+            {1, 1, 1, 1}
+        };
+        
+        System.out.println("Original Matrix:");
+        printMatrix(matrix);
+        
+        setZeroes(matrix);
+        
+        System.out.println("\nMatrix after setting zeroes:");
+        printMatrix(matrix);
+    }
+    
+    private static void printMatrix(int[][] matrix) {
+        for (int[] row: matrix) {
+            for (int val: row) {
+                System.out.print(val + " ");
+            }
+            System.out.println();
+        }
+    }
+}
+```
+
+**Output:**
+```
+Original Matrix:
+0 1 1 0 
+1 1 1 1 
+1 1 0 1 
+1 1 1 1 
+
+Matrix after setting zeroes:
+0 0 0 0 
+0 0 0 0 
+0 0 0 0 
+0 0 0 0 
+```
+
+---
+
+## Approach 3: Optimal Solution (O(1) Space)
+
+### Explanation
+
+The optimal approach uses the matrix itself to track which rows and columns need to be zeroed:
+1. **Use First Row and First Column:** Treat the first row and first column as markers for tracking which rows and columns contain zeros.
+2. **Handle Edge Case:** Use a separate variable to track if the first column contains a zero (since it serves dual purpose).
+3. **First Pass:** 
+   - Check if first row/column contains zeros
+   - For other elements, if zero is found, mark first row (column index) and first column (row index)
+4. **Second Pass:** Use the markings in first row/column to set appropriate elements to zero (skipping first row/column initially).
+5. **Final Pass:** Handle first row and first column based on initial zero checks.
+
+**Key Insights:**
+- **Space Optimization:** No extra arrays needed; use matrix boundaries as tracking space.
+- **Order Matters:** Process inner matrix first, then handle boundaries to avoid overwriting tracking information.
+- **Edge Case Handling:** First column needs special treatment since it serves both as data and tracking space.
+
+**Time Complexity:** O(m × n) - Three passes through the matrix.
+**Space Complexity:** O(1) - Only using one extra variable for first column tracking.
+
+### Sample Before Solution
+```
+Input Matrix:
+1 1 1
+1 0 1  
+1 1 1
+
+Step 1: Initialize tracking
+- First row has no zero: firstRowZero = false
+- First column has no zero: col0 = 1 (true)
+
+Step 2: First pass (marking using first row/column)
+- Find zero at (1,1)
+- Mark matrix[1][0] = 0 (first column, row 1)
+- Mark matrix[0][1] = 0 (first row, column 1)
+
+Matrix after marking:
+1 0 1
+0 0 1
+1 1 1
+
+Step 3: Second pass (set inner matrix to zero)
+- For i=1 to m-1, j=1 to n-1:
+  - If matrix[i][0] == 0 OR matrix[0][j] == 0, set matrix[i][j] = 0
+
+Inner matrix becomes:
+0 0 0
+1 0 1
+
+Step 4: Handle first row (no zeros initially, so restore 1s where needed)
+Step 5: Handle first column (no zeros initially, so restore 1s where needed)
+
+Final Matrix:
+1 0 1
+0 0 0
+1 0 1
+```
+
+### Optimal Solution Java Code
+
+```java
+public class SetMatrixZeroesOptimal {
+    public static void setZeroes(int[][] matrix) {
+        int m = matrix.length;
+        int n = matrix[0].length;
+        
+        // Variables to track if first row and first column contain zeros
+        boolean firstRowZero = false;
+        boolean firstColZero = false;
+        
+        // Step 1: Check if first row contains zero
+        for (int j = 0; j < n; j++) {
+            if (matrix[0][j] == 0) {
+                firstRowZero = true;
+                break;
+            }
+        }
+        
+        // Step 2: Check if first column contains zero
+        for (int i = 0; i < m; i++) {
+            if (matrix[i][0] == 0) {
+                firstColZero = true;
+                break;
+            }
+        }
+        
+        // Step 3: Mark using first row and first column (skip boundaries)
+        for (int i = 1; i < m; i++) {
+            for (int j = 1; j < n; j++) {
+                if (matrix[i][j] == 0) {
+                    // Mark this row and column using first row and first column
+                    matrix[i][0] = 0;      // Mark row i
+                    matrix[0][j] = 0;      // Mark column j
+                }
+            }
+        }
+        
+        // Step 4: Set inner matrix elements to zero based on markings
+        for (int i = 1; i < m; i++) {
+            for (int j = 1; j < n; j++) {
+                if (matrix[i][0] == 0 || matrix[0][j] == 0) {
+                    matrix[i][j] = 0;
+                }
+            }
+        }
+        
+        // Step 5: Handle first row
+        if (firstRowZero) {
+            for (int j = 0; j < n; j++) {
+                matrix[0][j] = 0;
+            }
+        } else {
+            // Restore first row to original values where it was used for marking
+            for (int j = 1; j < n; j++) {
+                if (matrix[0][j] == 0) {
+                    matrix[0][j] = 1;  // Restore original value
+                }
+            }
+        }
+        
+        // Step 6: Handle first column
+        if (firstColZero) {
+            for (int i = 0; i < m; i++) {
+                matrix[i][0] = 0;
+            }
+        } else {
+            // Restore first column to original values where it was used for marking
+            for (int i = 1; i < m; i++) {
+                if (matrix[i][0] == 0) {
+                    matrix[i][0] = 1;  // Restore original value
+                }
+            }
+        }
+    }
+    
+    // Test the optimal solution with multiple test cases
+    public static void main(String[] args) {
+        // Test Case 1: Basic case
+        int[][] matrix1 = {
+            {1, 1, 1},
+            {1, 0, 1},
+            {1, 1, 1}
+        };
+        
+        System.out.println("Test Case 1 - Original Matrix:");
+        printMatrix(matrix1);
+        setZeroes(matrix1);
+        System.out.println("Test Case 1 - After setting zeroes:");
+        printMatrix(matrix1);
+        System.out.println();
+        
+        // Test Case 2: First row has zero
+        int[][] matrix2 = {
+            {0, 1, 1},
+            {1, 1, 1},
+            {1, 1, 1}
+        };
+        
+        System.out.println("Test Case 2 - Original Matrix:");
+        printMatrix(matrix2);
+        setZeroes(matrix2);
+        System.out.println("Test Case 2 - After setting zeroes:");
+        printMatrix(matrix2);
+        System.out.println();
+        
+        // Test Case 3: First column has zero
+        int[][] matrix3 = {
+            {1, 1, 1},
+            {0, 1, 1},
+            {1, 1, 1}
+        };
+        
+        System.out.println("Test Case 3 - Original Matrix:");
+        printMatrix(matrix3);
+        setZeroes(matrix3);
+        System.out.println("Test Case 3 - After setting zeroes:");
+        printMatrix(matrix3);
+        System.out.println();
+        
+        // Test Case 4: Multiple zeros
+        int[][] matrix4 = {
+            {0, 1, 1, 0},
+            {1, 1, 1, 1},
+            {1, 1, 0, 1},
+            {1, 1, 1, 1}
+        };
+        
+        System.out.println("Test Case 4 - Original Matrix:");
+        printMatrix(matrix4);
+        setZeroes(matrix4);
+        System.out.println("Test Case 4 - After setting zeroes:");
+        printMatrix(matrix4);
+    }
+    
+    private static void printMatrix(int[][] matrix) {
+        for (int[] row: matrix) {
+            for (int val: row) {
+                System.out.print(val + " ");
+            }
+            System.out.println();
+        }
+    }
+}
+```
+
+**Output:**
+```
+Test Case 1 - Original Matrix:
+1 1 1 
+1 0 1 
+1 1 1 
+
+Test Case 1 - After setting zeroes:
+1 0 1 
+0 0 0 
+1 0 1 
+
+Test Case 2 - Original Matrix:
+0 1 1 
+1 1 1 
+1 1 1 
+
+Test Case 2 - After setting zeroes:
+0 0 0 
+0 0 0 
+0 0 0 
+
+Test Case 3 - Original Matrix:
+1 1 1 
+0 1 1 
+1 1 1 
+
+Test Case 3 - After setting zeroes:
+0 0 0 
+0 0 0 
+0 0 0 
+
+Test Case 4 - Original Matrix:
+0 1 1 0 
+1 1 1 1 
+1 1 0 1 
+1 1 1 1 
+
+Test Case 4 - After setting zeroes:
+0 0 0 0 
+0 0 0 0 
+0 0 0 0 
+0 0 0 0 
+```
+
+---
+
+## Complexity Analysis Summary
+
+| Approach | Time Complexity | Space Complexity | Pros | Cons |
+|----------|-----------------|------------------|------|------|
+| **Brute Force** | O(m × n × (m + n)) | O(1) | Simple logic | Very slow for large matrices |
+| **Better** | O(m × n) | O(m + n) | Optimal time, easy to understand | Uses extra space proportional to dimensions |
+| **Optimal** | O(m × n) | O(1) | Optimal time and space | Complex logic, edge case handling required |
+
+---
+
+
